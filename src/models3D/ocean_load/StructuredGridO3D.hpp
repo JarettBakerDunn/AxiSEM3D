@@ -35,7 +35,7 @@ class StructuredGridO3D : public OceanLoad3D {
   // get sum(rho * depth)
   bool
   getSumRhoDepth(
-      const eigen::DMatX3& spz, const eigen::DMat24& nodalSZ, eigen::DColX& sumRhoDepth) const;
+      const axisem3d::eigen::DMatX3& spz, const axisem3d::eigen::DMat24& nodalSZ, axisem3d::eigen::DColX& sumRhoDepth) const;
 
   // verbose
   std::string

@@ -69,7 +69,7 @@ StructuredGridG3D::StructuredGridG3D(const std::string& modelName,
 // get undulation on an element
 bool
 StructuredGridG3D::getUndulation(
-    const eigen::DMatX3& spz, const eigen::DMat24& nodalSZ, eigen::DColX& undulation) const {
+    const axisem3d::eigen::DMatX3& spz, const axisem3d::eigen::DMat24& nodalSZ, axisem3d::eigen::DColX& undulation) const {
   // check inplane scope
   const auto& gridCrds = mGrid->getGridCoords();
   if (!inplaneScope(nodalSZ,
@@ -88,7 +88,7 @@ StructuredGridG3D::getUndulation(
 
 // get undulation on points
 bool
-StructuredGridG3D::getUndulation(const eigen::DMatX3& spz, eigen::DColX& undulation) const {
+StructuredGridG3D::getUndulation(const axisem3d::eigen::DMatX3& spz, axisem3d::eigen::DColX& undulation) const {
   // cannot use undulated geometry to locate source and receivers
   // for super-only storage
   if (mGrid == nullptr) {
@@ -100,13 +100,13 @@ StructuredGridG3D::getUndulation(const eigen::DMatX3& spz, eigen::DColX& undulat
 
   //////////////////////// coords ////////////////////////
   // compute grid coords
-  const eigen::DMatX3& crdGrid = coordsFromMeshToModel(
+  const axisem3d::eigen::DMatX3& crdGrid = coordsFromMeshToModel(
       spz, mSourceCentered, mXY, mEllipticity, mLon360, mUseDepth, mDepthSolid, mModelName);
 
   //////////////////////// values ////////////////////////
   // allocate and fill with zero
   int nCardinals = (int)spz.rows();
-  undulation = eigen::DColX::Zero(nCardinals);
+  undulation = axisem3d::eigen::DColX::Zero(nCardinals);
 
   // point loop
   static const double err = std::numeric_limits<double>::lowest();
@@ -118,7 +118,7 @@ StructuredGridG3D::getUndulation(const eigen::DMatX3& spz, eigen::DColX& undulat
       continue;
     }
     // horizontal interpolation
-    const eigen::DRow2& horizontal = crdGrid.block(ipnt, 0, 1, 2);
+    const axisem3d::eigen::DRow2& horizontal = crdGrid.block(ipnt, 0, 1, 2);
     double val = mGrid->compute(horizontal, err);
     // check horizontal scope
     if (val > err * .9) {

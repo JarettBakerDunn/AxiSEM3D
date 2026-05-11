@@ -32,11 +32,11 @@ class OceanLoad3D : public Model3D {
   // get sum(rho * depth)
   virtual bool
   getSumRhoDepth(
-      const eigen::DMatX3& spz, const eigen::DMat24& nodalSZ, eigen::DColX& sumRhoDepth) const = 0;
+      const axisem3d::eigen::DMatX3& spz, const axisem3d::eigen::DMat24& nodalSZ, axisem3d::eigen::DColX& sumRhoDepth) const = 0;
 
   // set sum(rho * depth) to quad
   virtual void
-  setSumRhoDepthToQuad(const eigen::DColX& sumRhoDepth, Quad& quad) const;
+  setSumRhoDepthToQuad(const axisem3d::eigen::DColX& sumRhoDepth, Quad& quad) const;
 
   ////////////////////////////// static //////////////////////////////
   public:
