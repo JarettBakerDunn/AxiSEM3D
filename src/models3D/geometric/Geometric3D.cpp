@@ -160,7 +160,8 @@ Geometric3D::buildInparam(const ExodusMesh& exodusMesh,
     const std::string& dataVarName = gm.get<std::string>(rootu + ":nc_var");
     double factor = gm.get<double>(rootu + ":factor");
     bool superOnly = gm.get<bool>(root + ":store_grid_only_on_leaders");
-
+    int gaussianOrder = gm.get<int>(root + ":gaussian_order");
+    double gaussianDev = gm.get<double>(root + ":gaussian_deviation");
     // construct
     return std::make_shared<const StructuredGridG3D>(modelName,
         fname,
@@ -178,7 +179,9 @@ Geometric3D::buildInparam(const ExodusMesh& exodusMesh,
         angleUnit,
         dataVarName,
         factor,
-        superOnly);
+        superOnly,
+        gaussianOrder,
+        gaussianDev);
   } else if (className == "Ellipticity") {
     // ellipticity can be added only once
     static bool ellipticityAdded = false;

@@ -34,7 +34,9 @@ class StructuredGridG3D : public Geometric3D {
       double angleUnit,
       const std::string& dataVarName,
       double factor,
-      bool superOnly);
+      bool superOnly,
+      int gaussianOrder,
+      double gaussianDev);
 
   private:
   // get undulation on an element
@@ -83,6 +85,11 @@ class StructuredGridG3D : public Geometric3D {
 
   // super only
   const bool mSuperOnly;
+
+  // smoothening
+  const int mGaussianOrder;
+  const double mGaussianDev;
+
 };
 
 #endif /* StructuredGridG3D_hpp */

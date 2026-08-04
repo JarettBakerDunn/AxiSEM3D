@@ -28,11 +28,14 @@ StructuredGridG3D::StructuredGridG3D(const std::string& modelName,
     double angleUnit,
     const std::string& dataVarName,
     double factor,
-    bool superOnly) :
+    bool superOnly,
+    int gaussianOrder,
+    double gaussianDev) :
     Geometric3D(modelName), mFileName(fname), mCrdVarNames(crdVarNames),
     mSourceCentered(sourceCentered), mXY(xy), mEllipticity(ellipticity), mUseDepth(useDepth),
     mDepthSolid(depthSolid), mInterface(interface * lengthUnit), mMin(min * lengthUnit),
-    mMax(max * lengthUnit), mDataVarName(dataVarName), mFactor(factor), mSuperOnly(superOnly) {
+    mMax(max * lengthUnit), mDataVarName(dataVarName), mFactor(factor), mSuperOnly(superOnly),
+    mGaussianOrder(gaussianOrder), mGaussianDev(gaussianDev) {
   ////////////// init grid //////////////
   // info
   std::vector<std::pair<std::string, double>> dataInfo;
@@ -49,6 +52,9 @@ StructuredGridG3D::StructuredGridG3D(const std::string& modelName,
     if (!mSourceCentered) {
       mLon360 = sg_tools::constructLon360(*mGrid, mModelName);
     }
+  
+    mGrid->smoothGridData();
+
   };
 
   // data

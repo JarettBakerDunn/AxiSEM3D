@@ -326,6 +326,41 @@ template <int D, typename T> class StructuredGrid {
     return (int)mGridData.dimension(0);
   }
 
+  inline void smoothGridData() {
+    const auto& dims = mGridData.dimensions();
+
+    double sum = 0;
+    double sigma = 1.0;
+    double r;
+    double s = 2.0 * sigma * sigma;
+    //https://www.geeksforgeeks.org/blogs/gaussian-filter-generation-c/
+    for (int i = 0; i < dims[0]; ++i) {
+      for (int j = -2; j < dims[1]-2; ++j) {
+          for (int k = -2; k < dims[2]-2; ++k) {
+              // Let's try to gaussian smooth here
+              r = sqrt(j*j + k*k);
+              mGridData(i,j+2,k+2) = (exp(-(r*r) / s)) / (M_PI * s); 
+              sum += mGridData(i,j+2,k+2);
+              // So this avoids a negative mass jacobian.
+              // But obviously it destroys the actual data.
+              //mGridData(i,j,k) = -20.0;
+        }
+      }
+    }
+
+    //Normalize ???!?!?!
+    for (int i = 0; i < dims[0]; ++i) {
+      for (int j = 0; j < dims[1]; ++j) {
+          for (int k = 0; k < dims[2]; ++k) {
+              mGridData(i,j+2,k+2) = mGridData(i,j+2,k+2)/sum;
+        }
+      }
+    }
+
+
+  }
+
+
   private:
   // grid coords
   std::array<std::vector<double>, D> mGridCoords;
