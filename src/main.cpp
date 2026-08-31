@@ -494,7 +494,8 @@ computeDt(const SE_Model& sem, const ABC& abc) {
 // attenuation
 std::unique_ptr<const AttBuilder>
 buildAttenuation(const ExodusMesh& exodusMesh, double dt) {
-  // options
+  // options. Here inparam::getWithLimits will map an input parameter to an integer:
+  // NONE -> -1, FULL -> 0, CG4 -> 1. 
   int cg4 = inparam::gInparamModel.getWithLimits<int>(
       "attenuation", {{"NONE", -1}, {"FULL", 0}, {"CG4", 1}});
 

@@ -263,12 +263,21 @@ class InparamYAML {
     }
   }
 
-  // get value with string-typed limits
+  // get value with string-typed limits.
+  // jarett - to me it doesn't really seem like it is returning a value with limits 
+  // as much as it is mapping an input parameter keyword to a different type?
   template <typename T>
   T
   getWithLimits(const std::string& keyword, const std::map<std::string, T>& limits) const {
+    // Get the value of the keyword from the parsed input parameter YAML.
+    // the InparamYAML::get function will already throw an error if it does not contain the keyword.
     const std::string& res = get<std::string>(keyword);
     try {
+      // local variable res contains the parsed input parameter for the given keyword.
+      // this checks that the std::map function parameter "limits" actually contains that keyword,
+      // and also returns the value set in the limits map.
+      // so, in order for this function to work properly you need to be careful which values
+      // you populate the std::map limits function parameter with.
       return limits.at(res);
     } catch (...) {
       throw std::runtime_error("InparamYAML::getWithLimits || "

@@ -11,6 +11,7 @@
 
 #include "inparam.hpp"
 #include "io.hpp"
+#include "parameterHandler.hpp"
 
 namespace inparam {
   // global input parameters
@@ -19,6 +20,7 @@ namespace inparam {
   InparamYAML gInparamSource("Source");
   InparamYAML gInparamOutput("Output");
   InparamYAML gInparamAdvanced("Advanced");
+  
 
   // setup
   void
@@ -29,6 +31,9 @@ namespace inparam {
     gInparamSource.parse(io::gInputDirectory + "/inparam.source.yaml");
     gInparamOutput.parse(io::gInputDirectory + "/inparam.output.yaml");
     gInparamAdvanced.parse(io::gInputDirectory + "/inparam.advanced.yaml");
+    // parameterHandler only exists to write all possible parameters to YAML
+    ParameterHandler parameterHandler;
+    parameterHandler.writeAllParameters();
   }
 
   // verbose
