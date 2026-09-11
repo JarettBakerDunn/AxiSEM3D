@@ -39,15 +39,23 @@ namespace inparam {
 
         ParameterHandler(){
           Yaml::Node & ref = rootModel;
-          // This is how to do nesting with mini-yaml. Need to call PushBack() before adding to list.
-          //ref["absorbing_boundary"]["boundaries"].PushBack();
-          //ref["absorbing_boundary"]["boundaries"].PushBack();
-          //ref["absorbing_boundary"]["boundaries"][0] = "RIGHT";
-          //ref["absorbing_boundary"]["boundaries"][1]  = "BOTTOM";
+
 
           // Tests
-          declareParameter(std::string("absorbing_boundary:boundaries"),"RIGHT,BOTTOM",rootModel);
-          declareParameter(std::string("absorbing_boundary:Kosloff_Kosloff:enable"),"true",rootModel);
+          declareParameter(std::string("absorbing_boundary:boundaries"),
+                          "model boundaries regarded as absorbing boundaries",
+                          parameterTypes::stringArray,
+                          "RIGHT,BOTTOM,TOP",
+                          "RIGHT,BOTTOM",
+                          "1) an AxiSEM3D mesh may contain four outer boundaries: left (axial), right, bottom and top (surface); the right, bottom and top ones can be absorbing boundaries (the left or axial one is non-physical) 2) use [] to disable absorbing boundary condition(so that all model boundaries will be stress-free) 3) the most common case in seismology is [RIGHT, BOTTOM]",
+                          rootModel);
+          declareParameter(std::string("absorbing_boundary:Kosloff_Kosloff:enable"),
+                          "enable the Kosloff-Kosloff approach",
+                          parameterTypes::boolean,
+                          "boolean", //acceptableValues doesn't mean anything here since the type is a boolean
+                          "true",
+                          "Clayton-Enquist and Kosloff-Kosloff can be used together, but one of them has to be enabled at least",
+                          rootModel);
 
         }
         /**
@@ -67,10 +75,26 @@ namespace inparam {
          * that the input types were specified.
          * @param note Any notes about this input parameter. There is a corresponding section
          * in each inparam.yaml file.
+         * @param node The root yaml node for which to declare the parameter. Corresponds to one of the 
+         * inparam.yaml files: advanced, model, nr, output, or source.
          */
         
-        void declareParameter(std::string keyword, std::string defaultValue, Yaml::Node& node);
-        void declareParameter(std::vector<std::string> keyword, std::string defaultValue, Yaml::Node& node);
+
+        // These versions are overloaded to make it simpler when a parameter only has a single type.
+        void declareParameter(std::string keyword, 
+                              std::string description, 
+                              parameterTypes type, 
+                              std::string acceptableValues, 
+                              std::string defaultValue, 
+                              std::string note, 
+                              Yaml::Node& node);
+        void declareParameter(std::vector<std::string> keyword, 
+                              std::string description, 
+                              parameterTypes type, 
+                              std::string acceptableValues, 
+                              std::string defaultValue, 
+                              std::string note, 
+                              Yaml::Node& node);
         /**
          * 
          */
