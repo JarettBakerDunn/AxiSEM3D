@@ -141,3 +141,4 @@
 # note: 1) different options such as channels and sampling rates can
 #          be used for different element groups
 #       2) use [] if no element group presents
+list_of_element_groups: []

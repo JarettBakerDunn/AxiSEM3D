@@ -261,3 +261,20 @@ con: hits output performance if buffer_size is small
 2) this parameter does not affect the final results
 
 
+## element-wise
+
+### `list_of_element_groups`
+
+**What:** list of element groups
+
+**Type:** array of objects
+
+**Default:** `[]`
+
+**Note:**
+
+1) different options such as channels and sampling rates can
+be used for different element groups
+2) use [] if no element group presents
+
+
