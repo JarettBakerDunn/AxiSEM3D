@@ -236,7 +236,7 @@ include_directories(
 ${HPP_PATHS}
 # local externals
 external
-# generated sources
+# generated sources (default inparam headers)
 ${CMAKE_BINARY_DIR}/generated
 )
 
@@ -261,7 +261,7 @@ axisem3d
 ${CPP_FILES}
 # non-header-only local externals
 external/yaml/Yaml.cpp
-# generated sources
+# generated sources (default inparam headers)
 ${INPARAM_DEFAULT_HPP}
 )
 
@@ -272,7 +272,7 @@ axisem3d-debug
 ${CPP_FILES}
 # non-header-only local externals
 external/yaml/Yaml.cpp
-# generated sources
+# generated sources (default inparam headers)
 ${INPARAM_DEFAULT_HPP}
 )
 
