@@ -22,6 +22,13 @@ namespace inparam {
   extern InparamYAML gInparamOutput;
   extern InparamYAML gInparamAdvanced;
 
+  // global default input parameters
+  extern InparamYAML gInparamModelDefault;
+  extern InparamYAML gInparamNrDefault;
+  extern InparamYAML gInparamSourceDefault;
+  extern InparamYAML gInparamOutputDefault;
+  extern InparamYAML gInparamAdvancedDefault;
+
   // setup
   void
   setup();

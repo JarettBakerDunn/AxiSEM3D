@@ -236,12 +236,23 @@ include_directories(
 ${HPP_PATHS}
 # local externals
 external
+# generated sources
+${CMAKE_BINARY_DIR}/generated
 )
 
 
 ################# source files #################
 # find *.cpp
 file(GLOB_RECURSE CPP_FILES src/*.cpp)
+
+# default inparam yamls, compiled to a single C++ header at build time
+set(INPARAM_DEFAULT_YAMLS
+${CMAKE_SOURCE_DIR}/examples/template_develop/input/inparam.model.yaml
+${CMAKE_SOURCE_DIR}/examples/template_develop/input/inparam.nr.yaml
+${CMAKE_SOURCE_DIR}/examples/template_develop/input/inparam.source.yaml
+${CMAKE_SOURCE_DIR}/examples/template_develop/input/inparam.output.yaml
+${CMAKE_SOURCE_DIR}/examples/template_develop/input/inparam.advanced.yaml)
+set(INPARAM_DEFAULT_HPP ${CMAKE_BINARY_DIR}/generated/inparam_defaults.hpp)
 
 # add all source files
 add_executable(
@@ -250,6 +261,8 @@ axisem3d
 ${CPP_FILES}
 # non-header-only local externals
 external/yaml/Yaml.cpp
+# generated sources
+${INPARAM_DEFAULT_HPP}
 )
 
 # add all source files to the debug executable
@@ -259,6 +272,8 @@ axisem3d-debug
 ${CPP_FILES}
 # non-header-only local externals
 external/yaml/Yaml.cpp
+# generated sources
+${INPARAM_DEFAULT_HPP}
 )
 
 # Create a list with both executables, so that we can loop through them
@@ -322,6 +337,28 @@ add_custom_target(indent
   COMMAND sh "${CMAKE_SOURCE_DIR}/tools/indent.sh"
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "Indenting source with clang-format (tools/indent.sh)"
+)
+
+
+################# yaml parameters tool #################
+# tool to compile an inparam yaml file to a C++ header
+add_executable(axisem3d_yaml_parameters
+tools/yaml_parameters/main.cpp
+src/shared/io/inparam/InparamYAML.cpp
+external/yaml/Yaml.cpp
+src/shared/utilities/bstring.cpp
+)
+# the tool is a single process, so compile without MPI
+target_compile_definitions(axisem3d_yaml_parameters PRIVATE AXISEM3D_SERIAL_BUILD)
+set_property(TARGET axisem3d_yaml_parameters PROPERTY CXX_STANDARD 17)
+
+# compile the default inparam yamls to a single C++ header
+add_custom_command(
+  OUTPUT ${INPARAM_DEFAULT_HPP}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/generated
+  COMMAND axisem3d_yaml_parameters ${INPARAM_DEFAULT_HPP} ${INPARAM_DEFAULT_YAMLS}
+  DEPENDS axisem3d_yaml_parameters ${INPARAM_DEFAULT_YAMLS}
+  COMMENT "Compiling default inparam yamls to C++ header"
 )
 
 
@@ -427,6 +464,11 @@ if(NUMDIFF_EXECUTABLE AND EXISTS "${PROJECT_SOURCE_DIR}/tests")
   message(STATUS "Found ${_n_tests} tests.")
   message(STATUS "")
 endif()
+
+# yaml parameters roundtrip test (always available, does not need numdiff)
+add_test(NAME yaml_parameters.verify
+  COMMAND axisem3d_yaml_parameters --verify ${INPARAM_DEFAULT_YAMLS}
+)
 
 
 

@@ -28,9 +28,30 @@ class InparamYAML {
     // nothing
   }
 
-  // parse
+  // parse the file: read + broadcast lines, preprocess, Yaml::Parse
   void
   parse(const std::string& fname);
+
+  // Clean up input parameter string
+  static std::string
+  preprocess(std::vector<std::string>& lines, const std::string& label);
+
+  // get the root node
+  const Yaml::Node&
+  getRoot() const {
+    return mRoot;
+  }
+
+  // load from a node tree (deep copy)
+  void
+  loadFromNode(const Yaml::Node& root) {
+    mRoot = root;
+  }
+
+  // fill leaves missing from this tree from the src tree. Used 
+  // for setting default values for parameters.
+  void
+  fillFrom(const InparamYAML& src);
 
   // verbose
   std::string

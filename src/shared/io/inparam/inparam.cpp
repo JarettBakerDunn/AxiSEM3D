@@ -11,6 +11,7 @@
 
 #include "inparam.hpp"
 #include "io.hpp"
+#include "inparam_defaults.hpp"
 
 namespace inparam {
   // global input parameters
@@ -19,6 +20,13 @@ namespace inparam {
   InparamYAML gInparamSource("Source");
   InparamYAML gInparamOutput("Output");
   InparamYAML gInparamAdvanced("Advanced");
+
+  // global default input parameters
+  InparamYAML gInparamModelDefault("Model_Default");
+  InparamYAML gInparamNrDefault("Nr_Default");
+  InparamYAML gInparamSourceDefault("Source_Default");
+  InparamYAML gInparamOutputDefault("Output_Default");
+  InparamYAML gInparamAdvancedDefault("Advanced_Default");
 
   // setup
   void
@@ -29,6 +37,21 @@ namespace inparam {
     gInparamSource.parse(io::gInputDirectory + "/inparam.source.yaml");
     gInparamOutput.parse(io::gInputDirectory + "/inparam.output.yaml");
     gInparamAdvanced.parse(io::gInputDirectory + "/inparam.advanced.yaml");
+
+    // load defaults from inparam_defaults.hpp
+    gInparamModelDefault.loadFromNode(modelDefault::build());
+    gInparamNrDefault.loadFromNode(nrDefault::build());
+    gInparamSourceDefault.loadFromNode(sourceDefault::build());
+    gInparamOutputDefault.loadFromNode(outputDefault::build());
+    gInparamAdvancedDefault.loadFromNode(advancedDefault::build());
+
+    // fill missing keys in the model inparam with their defaults
+    gInparamModel.fillFrom(gInparamModelDefault);
+    gInparamNr.fillFrom(gInparamNrDefault);
+    gInparamSource.fillFrom(gInparamSourceDefault);
+    gInparamOutput.fillFrom(gInparamOutputDefault);
+    gInparamAdvanced.fillFrom(gInparamAdvancedDefault);
+
   }
 
   // verbose
