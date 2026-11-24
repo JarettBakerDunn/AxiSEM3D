@@ -30,7 +30,6 @@
 //  AXISEM3D_SERIAL_BUILD and provides a no-op for the one MPI symbol
 //  that InparamYAML::parse references.
 
-#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -54,118 +53,24 @@ namespace mpi {
 
 namespace {
 
-  // ****** escape ******
+  // ****** literal ******
 
-  // escape a string into a C++ string literal. Every byte that would be
-  // ambiguous inside a literal is escaped; all other bytes pass through
-  // unchanged, so the result is lossless.
+  // wrap the preprocessed text in a C++ raw string literal. A raw literal takes
+  // its content verbatim, so the compiler reads back exactly these bytes and
+  // there is no escape to get wrong (unlike a quoted literal, which a hand-rolled
+  // decoder could misread). The one thing that breaks a raw literal is its closing
+  // sequence appearing inside the content; for a distinctive delimiter that never
+  // happens in parameter yaml, and if it ever does we fail at codegen time (and in
+  // --verify) instead of shipping a header that will not compile.
   std::string
-  escapeLiteral(const std::string& in) {
-    std::string out = "\"";
-    for (unsigned char c : in) {
-      switch (c) {
-        case '"':
-          out += "\\\"";
-          break;
-        case '\\':
-          out += "\\\\";
-          break;
-        case '\n':
-          out += "\\n";
-          break;
-        case '\t':
-          out += "\\t";
-          break;
-        case '\r':
-          out += "\\r";
-          break;
-        default:
-          if (c < 0x20) {
-            char buf[8];
-            std::snprintf(buf, sizeof(buf), "\\x%02x", c);
-            out += buf;
-          } else {
-            out += (char)c;
-          }
-          break;
-      }
-    }
-    out += "\"";
-    return out;
-  }
-
-  // reverse of escapeLiteral. Used only to verify that escapeLiteral is
-  // lossless: unescape(escape(text)) must equal text byte-for-byte.
-  int
-  hexValue(char c) {
-    if (c >= '0' && c <= '9') {
-      return c - '0';
-    }
-    if (c >= 'a' && c <= 'f') {
-      return c - 'a' + 10;
-    }
-    if (c >= 'A' && c <= 'F') {
-      return c - 'A' + 10;
-    }
-    throw std::runtime_error("axisem3d_yaml_parameters || "
-        "invalid hex digit in unescapeLiteral");
-  }
-
-  std::string
-  unescapeLiteral(const std::string& lit) {
-    if (lit.size() < 2 || lit.front() != '"' || lit.back() != '"') {
+  wrapInRawLiteral(const std::string& in) {
+    const std::string closingSequence = ")axisem3d_delim\"";
+    if (in.find(closingSequence) != std::string::npos) {
       throw std::runtime_error("axisem3d_yaml_parameters || "
-          "expected a quoted string literal in unescapeLiteral");
+          "content contains the raw-literal closing sequence || "
+          "choose a longer delimiter");
     }
-    const std::string& body = lit.substr(1, lit.size() - 2);
-    std::string out;
-    for (size_t i = 0; i < body.size(); i++) {
-      if (body[i] != '\\') {
-        out += body[i];
-        continue;
-      }
-      // an escape sequence follows
-      if (i + 1 >= body.size()) {
-        throw std::runtime_error("axisem3d_yaml_parameters || "
-            "trailing backslash in unescapeLiteral");
-      }
-      i++;
-      const char e = body[i];
-      switch (e) {
-        case 'n':
-          out += '\n';
-          break;
-        case 't':
-          out += '\t';
-          break;
-        case 'r':
-          out += '\r';
-          break;
-        case '"':
-          out += '"';
-          break;
-        case '\\':
-          out += '\\';
-          break;
-        case 'x': {
-          if (i + 2 >= body.size()) {
-            throw std::runtime_error("axisem3d_yaml_parameters || "
-                "incomplete \\x escape in unescapeLiteral");
-          }
-          const int hi = hexValue(body[i + 1]);
-          const int lo = hexValue(body[i + 2]);
-          out += (char)((hi * 16 + lo) & 0xff);
-          i += 2;
-          break;
-        }
-        default:
-          // escapeLiteral never emits these; reaching here means a
-          // round-trip failure
-          throw std::runtime_error("axisem3d_yaml_parameters || "
-              "unexpected escape in unescapeLiteral");
-      }
-    }
-    return out;
+    return "R\"axisem3d_delim(" + in + closingSequence;
   }
 
   // ****** namespace ******
@@ -197,7 +102,7 @@ namespace {
   // ****** process ******
 
   // read one input file, run the shared preprocessor, verify the result, and
-  // return the escaped literal of the preprocessed text. The preprocessed
+  // return the raw literal of the preprocessed text. The preprocessed
   // text is what the runtime InparamYAML::parse produces before Yaml::Parse,
   // so embedding it guarantees the generated header parses identically.
   std::string
@@ -208,23 +113,12 @@ namespace {
     // preprocess with the shared function (the same bytes the runtime makes)
     const std::string& text = InparamYAML::preprocess(lines, fname);
 
-    // verify 1: the escape round-trips byte-for-byte. This guards the one real
-    // risk of embedding text, a lossy escape, so a future bug fails the build
-    // instead of silently corrupting the parameters.
-    const std::string escaped = escapeLiteral(text);
-    if (unescapeLiteral(escaped) != text) {
-      throw std::runtime_error("axisem3d_yaml_parameters || "
-          "escape round-trip FAILED || " + fname);
-    }
-
-    // verify 2: the bytes the header embeds parse to a non-None root, exactly
-    // as they will at runtime. We feed the unescaped embedded content (std::string,
-    // so it binds the same Yaml::Parse overload the runtime and build() use),
-    // not the raw pre-escape text, so this checks the actual code path. A parse
-    // failure here would also fail at startup, so it is surfaced at build time.
+    // verify: a raw literal embeds its content verbatim, so parsing `text` here
+    // checks the exact bytes build() will parse at runtime. A failure here would
+    // also fail at startup, so it is surfaced at build time instead.
     Yaml::Node root;
     try {
-      Yaml::Parse(root, std::string(unescapeLiteral(escaped)));
+      Yaml::Parse(root, text);
     } catch (const std::exception& e) {
       throw std::runtime_error("axisem3d_yaml_parameters || "
           "embedded text does not parse || " + fname + " || " + e.what());
@@ -235,7 +129,7 @@ namespace {
     }
 
     (void)namespaceName;
-    return escaped;
+    return wrapInRawLiteral(text);
   }
 
   // ****** generate ******
@@ -265,9 +159,9 @@ namespace {
     os << "//  do not edit this file by hand; it is regenerated at build time\n"
        << "//\n"
        << "//  each default is the embedded preprocessed text of its source file,\n"
-       << "//  re-parsed in memory at startup. the embedded bytes are produced by\n"
-       << "//  the same InparamYAML::preprocess the runtime uses, so the build-time\n"
-       << "//  and runtime trees are identical.\n"
+       << "//  stored as a raw string literal and re-parsed in memory at startup.\n"
+       << "//  the embedded bytes are produced by the same InparamYAML::preprocess\n"
+       << "//  the runtime uses, so the build-time and runtime trees are identical.\n"
        << "//\n"
        << "\n"
        << "#pragma once\n"
@@ -283,9 +177,9 @@ namespace {
          << "  inline Yaml::Node\n"
          << "  build() {\n"
          << "    Yaml::Node root;\n"
-         // wrap the literal in std::string: a bare const char* would bind to
+         // wrap the raw literal in std::string: it is still a const char*, which would bind to
          // Yaml::Parse(Node&, const char* filename) (open a file) instead of
-         // the string overload, so this cast is what makes build() use the
+         // the string-content overload, so this wrap is what makes build() use the
          // same overload the runtime InparamYAML::parse uses
          << "    Yaml::Parse(root, std::string(" << literals[i] << "));\n"
          << "    return root;\n"
@@ -302,8 +196,8 @@ namespace {
   doGenerate(
       const std::string& outFname,
       const std::vector<std::string>& inFnames) {
-    // process every input first (each verifies the round-trip and the parse),
-    // so a single bad file aborts before any output is written
+    // process every input first (each parses its text and guards the raw-literal
+    // closing sequence), so a single bad file aborts before any output is written
     std::vector<std::string> paths;
     std::vector<std::string> namespaces;
     std::vector<std::string> literals;
