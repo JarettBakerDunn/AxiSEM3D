@@ -60,7 +60,9 @@ namespace modelDefault {
   inline Yaml::Node
   build() {
     Yaml::Node root;
-    Yaml::Parse(root, "<preprocessed text of inparam.model.yaml>");
+    Yaml::Parse(root, std::string(R"axisem3d_delim(
+<preprocessed text of inparam.model.yaml, verbatim>
+)axisem3d_delim"));
     return root;
   }
 } // namespace modelDefault
@@ -68,15 +70,27 @@ namespace modelDefault {
 } // namespace inparam
 ```
 
+The embedded text is a raw string literal, so it appears in the generated header
+verbatim (newlines included) rather than as an escaped single line. The
+`std::string(...)` wrap forces `Yaml::Parse` to use its string-content overload
+instead of the filename overload.
+
 ## In-tool verification
 
 For each input, before any output is written:
 
-1. **Escape round-trip** — `unescape(escape(text)) == text`, byte-for-byte.
-   This guards the one real risk of embedding text (a lossy escape).
-2. **Parse validity** — the preprocessed text must `Yaml::Parse` to a non-None
-   root. A parse failure here would also fail at startup, so it is surfaced at
-   build time instead.
+1. **Parse validity** — the preprocessed text must `Yaml::Parse` to a non-None
+   root. The raw literal embeds its content verbatim, so parsing the text here
+   checks the exact bytes `build()` will parse at runtime. A failure here would
+   also fail at startup, so it is surfaced at build time instead.
+2. **Raw-literal closing sequence** — the content must not contain the literal's
+   closing sequence `)axisem3d_delim"`, which would terminate the string early and break
+   the build. Checked so a collision fails at codegen time (and in `--verify`
+   under ctest) with a clear message, rather than as an opaque compile error.
+
+Because the embedded text is a raw string literal, it is lossless by construction
+(the compiler reads the bytes verbatim), so there is no separate losslessness
+check the way a quoted-escaped literal would need.
 
 A preprocess *bug* (valid but wrong YAML) is not catchable in the tool, because
 the tool and the runtime share the same `preprocess`; it is guarded by the
